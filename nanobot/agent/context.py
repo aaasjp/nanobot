@@ -1,12 +1,15 @@
 """Context builder for assembling agent prompts."""
 
 import base64
+import json
 import mimetypes
 import platform
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from loguru import logger
 
 from nanobot.agent.memory import MemoryStore
 from nanobot.agent.skills import SkillsLoader
@@ -138,11 +141,20 @@ Reply directly with text for conversations. Only use the 'message' tool to send 
         else:
             merged = [{"type": "text", "text": runtime_ctx}] + user_content
 
-        return [
+        messages: list[dict[str, Any]] = [
             {"role": "system", "content": self.build_system_prompt(skill_names)},
             *history,
             {"role": "user", "content": merged},
         ]
+
+        # 在 DEBUG 级别输出完整消息列表（包含系统提示词、历史和当前用户消息），格式化为易读的 JSON
+        #try:
+        #    pretty = json.dumps(messages, ensure_ascii=False, indent=2, default=str)
+        #except TypeError:
+        #    pretty = str(messages)
+        #logger.debug("Built LLM messages:\n{}", pretty)
+
+        return messages
 
     def _build_user_content(self, text: str, media: list[str] | None) -> str | list[dict[str, Any]]:
         """Build user message content with optional base64-encoded images."""

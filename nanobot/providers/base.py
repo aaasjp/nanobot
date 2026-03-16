@@ -231,6 +231,13 @@ class LLMProvider(ABC):
                     finish_reason="error",
                 )
 
+            logger.debug(
+                "LLM chat response (attempt {}/{}): {}",
+                attempt,
+                len(self._CHAT_RETRY_DELAYS),
+                response,
+            )
+
             if response.finish_reason != "error":
                 return response
             if not self._is_transient_error(response.content):

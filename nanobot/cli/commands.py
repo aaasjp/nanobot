@@ -595,12 +595,18 @@ def agent(
     logs: bool = typer.Option(False, "--logs/--no-logs", help="Show nanobot runtime logs during chat"),
 ):
     """Interact with the agent directly."""
-    from loguru import logger
-
     from nanobot.agent.loop import AgentLoop
     from nanobot.bus.queue import MessageBus
     from nanobot.config.paths import get_cron_dir
     from nanobot.cron.service import CronService
+
+    from nanobot.utils.logging import init_logging
+
+    # 初始化日志：默认 INFO，带 --logs 时用 DEBUG，更详细
+    if logs:
+        init_logging(level="DEBUG", rotation="00:00", retention="7 days")
+    else:
+        init_logging(level="INFO", rotation="00:00", retention="7 days")
 
     config = _load_runtime_config(config, workspace)
     _print_deprecated_memory_window_notice(config)
@@ -612,11 +618,6 @@ def agent(
     # Create cron service for tool usage (no callback needed for CLI unless running)
     cron_store_path = get_cron_dir() / "jobs.json"
     cron = CronService(cron_store_path)
-
-    if logs:
-        logger.enable("nanobot")
-    else:
-        logger.disable("nanobot")
 
     agent_loop = AgentLoop(
         bus=bus,
